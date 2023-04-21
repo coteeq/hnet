@@ -1,9 +1,9 @@
 [submodule "fallible"]
 	path = fallible
-	url = git@gitlab.com:Lipovsky/fallible.git
+	url = git@github.com:coteeq/fallible.git
 [submodule "wheels"]
 	path = wheels
-	url = git@gitlab.com:Lipovsky/wheels.git
+	url = git@github.com:coteeq/wheels.git
 [submodule "sure"]
 	path = sure
-	url = git@gitlab.com:Lipovsky/sure.git
+	url = git@github.com:coteeq/sure.git
