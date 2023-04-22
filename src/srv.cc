@@ -42,24 +42,27 @@ public:
             last_cqe_.res
         );
 
-        LOG_DEBUG("received req from={} text={} ({} bytes)",
-            net::Addr::from_addr_in6(req->addr), req_text, req_text.size());
+        // LOG_DEBUG("received req from={} text={} ({} bytes)",
+        //     net::Addr::from_addr_in6(req->addr), req_text, req_text.size());
 
-        static const char* reply_text = "tenletters";
+        // static const char* reply_text = "tenletters";
         net::Request reply(500);
-        LOG_DEBUG("iov_len: {}", reply.iov.iov_len);
-        auto fmt_res = fmt::format_to_n(
-            static_cast<char*>(reply.iov.iov_base),
-            reply.iov.iov_len,
-            "in reply to '{}': {}",
-            req_text, reply_text
-        );
-        reply.iov.iov_len = fmt_res.size;
+        // LOG_DEBUG("iov_len: {}", reply.iov.iov_len);
+        // auto fmt_res = fmt::format_to_n(
+        //     static_cast<char*>(reply.iov.iov_base),
+        //     reply.iov.iov_len,
+        //     "in reply to '{}': {}",
+        //     req_text, reply_text
+        // );
+        memcpy(reply.iov.iov_base, req->iov.iov_base, req->iov.iov_len);
+        void* second_portion = static_cast<void*>(static_cast<char*>(reply.iov.iov_base) + req->iov.iov_len);
+        memcpy(second_portion, req->iov.iov_base, req->iov.iov_len);
+        reply.iov.iov_len = req->iov.iov_len * 2;
         reply.addr = req->addr;
-        LOG_DEBUG("sending text to {}, {} bytes", net::Addr::from_addr_in6(req->addr), reply.as_text().size());
+        // LOG_DEBUG("sending text to {}, {} bytes", net::Addr::from_addr_in6(req->addr), reply.as_text().size());
         ring->sendmsg(socket_, &reply.hdr, cookie_);
         yield();
-        LOG_DEBUG("successfully sent {} bytes", last_cqe_.res)
+        // LOG_DEBUG("successfully sent {} bytes", last_cqe_.res)
 
         WHEELS_UNUSED(ring);
     }

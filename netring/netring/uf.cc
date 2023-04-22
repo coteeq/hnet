@@ -17,7 +17,8 @@ BaseHandler::BaseHandler(
         sure::Stack&& stack,
         sure::ExecutionContext* main_ctx,
         Cookie cookie,
-        Socket* socket
+        Socket* socket,
+        five::Instant start
     )
     : uring_ref_(ring)
     , request_(std::move(request))
@@ -28,11 +29,13 @@ BaseHandler::BaseHandler(
     , socket_(socket)
     , last_cqe_()
     , cookie_(cookie)
+    , start_(start)
 {
 }
 
 
 void BaseHandler::Run() noexcept {
+    LOG_INFO("calling handler after {}", five::Instant::now() - start_);
     try {
         LOG_DEBUG("handling request");
         handle(uring_ref_, &request_);
@@ -42,7 +45,8 @@ void BaseHandler::Run() noexcept {
     finished_ = true;
 
     LOG_DEBUG("ExitTo({})", fmt::ptr(main_ctx_));
-    wheels::FlushPendingLogMessages();
+    LOG_INFO("finished request in {}", five::Instant::now() - start_);
+    // wheels::FlushPendingLogMessages();
     my_ctx_.ExitTo(*main_ctx_);
 }
 
@@ -50,7 +54,7 @@ void BaseHandler::yield() {
     LOG_DEBUG("get back to main...");
     get_my_ctx()->SwitchTo(*main_ctx_);
     LOG_DEBUG("inside fiber again");
-    wheels::FlushPendingLogMessages();
+    // wheels::FlushPendingLogMessages();
 }
 
 bool BaseHandler::is_finished() const {
@@ -63,7 +67,7 @@ sure::ExecutionContext* BaseHandler::get_my_ctx() {
 
 void BaseHandler::switch_here() {
     LOG_DEBUG("switching...");
-    wheels::FlushPendingLogMessages();
+    // wheels::FlushPendingLogMessages();
     main_ctx_->SwitchTo(*get_my_ctx());
     LOG_DEBUG("switched!");
 }

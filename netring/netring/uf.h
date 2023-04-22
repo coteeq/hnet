@@ -9,6 +9,7 @@
 #include <liburing.h>
 #include <five/stdint.h>
 #include <string_view>
+#include <five/time.h>
 
 namespace net {
 
@@ -85,7 +86,8 @@ protected:
         sure::Stack&& stack,
         sure::ExecutionContext* main_ctx,
         Cookie cookie,
-        Socket* socket
+        Socket* socket,
+        five::Instant start
     );
 
     void yield();
@@ -111,6 +113,9 @@ public:
     Socket* socket_;
     UsefulCqe last_cqe_;
     Cookie cookie_;
+
+private:
+    five::Instant start_;
 };
 
 class Executor {
@@ -131,7 +136,9 @@ public:
         }
 
         for (;;) {
+            auto start = five::Instant::now();
             auto cqe = uring_.poll_cookie();
+            LOG_INFO("polled in {}", five::Instant::now() - start);
             auto* req_or_handler = static_cast<ReqOrHandler*>(cqe.user_data);
             // auto kill_handler = [&](Handler&& handler) {
 
@@ -146,7 +153,8 @@ public:
                     std::move(stacks.get()),
                     &main_ctx,
                     static_cast<Cookie>(new_req_or_handler),
-                    socket
+                    socket,
+                    start
                 );
                 h.last_cqe_ = cqe;
                 new_req_or_handler->template emplace<Handler>(std::move(h));
@@ -157,6 +165,7 @@ public:
                 req_or_handler->template emplace<Request>(500);
                 uring_.recvmsg(socket, &std::get<Request>(*req_or_handler).hdr, static_cast<Cookie>(req_or_handler));
 
+                LOG_INFO("jumping into handler after {}", five::Instant::now() - start);
                 handler.switch_here();
                 if (handler.is_finished()) {
                     LOG_DEBUG("delete oneshot");
