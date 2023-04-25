@@ -46,7 +46,6 @@ void BaseHandler::Run() noexcept {
 
     LOG_DEBUG("ExitTo({})", fmt::ptr(main_ctx_));
     LOG_INFO("finished request in {}", five::Instant::now() - start_);
-    // wheels::FlushPendingLogMessages();
     my_ctx_.ExitTo(*main_ctx_);
 }
 
@@ -54,7 +53,6 @@ void BaseHandler::yield() {
     LOG_DEBUG("get back to main...");
     get_my_ctx()->SwitchTo(*main_ctx_);
     LOG_DEBUG("inside fiber again");
-    // wheels::FlushPendingLogMessages();
 }
 
 bool BaseHandler::is_finished() const {
@@ -67,7 +65,6 @@ sure::ExecutionContext* BaseHandler::get_my_ctx() {
 
 void BaseHandler::switch_here() {
     LOG_DEBUG("switching...");
-    // wheels::FlushPendingLogMessages();
     main_ctx_->SwitchTo(*get_my_ctx());
     LOG_DEBUG("switched!");
 }
