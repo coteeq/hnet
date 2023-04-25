@@ -54,14 +54,19 @@ public:
         //     "in reply to '{}': {}",
         //     req_text, reply_text
         // );
-        memcpy(reply.iov.iov_base, req->iov.iov_base, req->iov.iov_len);
-        void* second_portion = static_cast<void*>(static_cast<char*>(reply.iov.iov_base) + req->iov.iov_len);
-        memcpy(second_portion, req->iov.iov_base, req->iov.iov_len);
-        reply.iov.iov_len = req->iov.iov_len * 2;
+        memcpy(reply.iov.iov_base, req->iov.iov_base, req_text.size());
+        void* second_portion = static_cast<void*>(static_cast<char*>(reply.iov.iov_base) + req_text.size());
+        memcpy(second_portion, req->iov.iov_base, req_text.size());
+        reply.iov.iov_len = req_text.size() * 2;
         reply.addr = req->addr;
+
         // LOG_DEBUG("sending text to {}, {} bytes", net::Addr::from_addr_in6(req->addr), reply.as_text().size());
+
+        // auto start = five::Instant::now();
         ring->sendmsg(socket_, &reply.hdr, cookie_);
+        // LOG_INFO("submit: {}", start.elapsed());
         yield();
+
         // LOG_DEBUG("successfully sent {} bytes", last_cqe_.res)
 
         WHEELS_UNUSED(ring);
