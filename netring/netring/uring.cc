@@ -22,7 +22,11 @@ Uring::Uring()
     : ring_({})
     , contexts_pool_()
 {
-    io_uring_queue_init(8, &ring_, 0);
+    struct io_uring_params params = {};
+    params.flags |= IORING_SETUP_SQPOLL;
+    params.sq_thread_idle = 2000;
+
+    io_uring_queue_init_params(8, &ring_, &params);
     for (int i = 0; i < 1000; ++i) {
         contexts_pool_.push_back(new UContext);
     }
@@ -32,6 +36,7 @@ Uring::~Uring() {
     for (auto* ctx : contexts_pool_) {
         delete ctx;
     }
+    io_uring_queue_exit(&ring_);
 }
 
 void Uring::sendmsg(std::shared_ptr<Socket> sock, struct msghdr *hdr, CompleteCb&& cb) {
