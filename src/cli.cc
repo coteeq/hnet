@@ -59,7 +59,7 @@ class ClientProgram: public Program<ClientConfig> {
             ssize_t len = sendto(
                 socket->fd(),
                 data_to_send,
-                strlen(data_to_send),
+                config.data_to_send.size(),
                 0,
                 &addr.addr_,
                 addr.addrlen_
