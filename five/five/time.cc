@@ -20,6 +20,16 @@ Instant Instant::now_fast() {
     return Instant(get_now_nanos(CLOCK_REALTIME_COARSE));
 }
 
+Duration Instant::elapsed() const {
+    return Instant::now() - *this;
+}
+
+Duration Instant::elapsed_fast() const {
+    return Instant::now_fast() - *this;
+}
+
+
+
 Duration Instant::operator -(const Instant& other) const {
     return Duration(nanos() - other.nanos());
 }

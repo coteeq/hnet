@@ -70,6 +70,9 @@ public:
     static Instant now();
     static Instant now_fast();
 
+    Duration elapsed() const;
+    Duration elapsed_fast() const;
+
     Duration operator -(const Instant& other) const;
 
     Instant operator +(const Duration& other) const;
