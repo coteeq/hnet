@@ -7,3 +7,6 @@
 [submodule "sure"]
 	path = sure
 	url = git@github.com:coteeq/sure.git
+[submodule "tinyfibers"]
+	path = tinyfibers
+	url = git@github.com:coteeq/tinyfibers.git

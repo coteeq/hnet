@@ -21,12 +21,13 @@ set(CLI_SRCS
     src/cli.cc
 )
 
-add_subdirectory(fallible/fallible)
 add_subdirectory(third)
+add_subdirectory(wheels)
+add_subdirectory(fallible/fallible)
 add_subdirectory(five)
 add_subdirectory(netring)
-add_subdirectory(wheels)
 add_subdirectory(sure)
+add_subdirectory(tinyfibers)
 
 # target_compile_options(net PRIVATE -Wno-pedantic)
 
@@ -38,7 +39,8 @@ target_link_libraries(srv
     sure
     # tinyfibers
 )
+
 target_link_libraries(cli
-    netring
-    five
+netring
+five
 )

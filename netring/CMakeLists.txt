@@ -5,6 +5,7 @@ add_library(netring
 )
 target_include_directories(netring PUBLIC .)
 
+target_link_libraries(netring wheels)
 target_link_libraries(netring fmt)
 target_link_libraries(netring fallible)
 target_link_libraries(netring sure)
