@@ -24,10 +24,12 @@ public:
     void submit(RequestBuilder builder) const;
     UsefulCqe poll() const;
     std::optional<UsefulCqe> try_poll() const;
+    bool has_pending() const;
 
 private:
     // TODO: buffers
     mutable struct io_uring ring_;
+    mutable size_t pending_count_;
 };
 
 }

@@ -10,6 +10,7 @@ public:
     RingPoller(std::shared_ptr<Ring> ring);
 
     tf::rt::Fiber* TryPoll() override;
+    bool HasPending() const override;
 
 private:
     std::shared_ptr<Ring> ring_;

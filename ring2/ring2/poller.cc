@@ -1,5 +1,6 @@
 #include "poller.h"
 #include <tf/rt/fiber.hpp>
+#include <wheels/logging/logging.hpp>
 
 namespace net {
 
@@ -15,6 +16,10 @@ tf::rt::Fiber* RingPoller::TryPoll() {
         return setter->fiber;
     }
     return nullptr;
+}
+
+bool RingPoller::HasPending() const {
+    return ring_->has_pending();
 }
 
 }
