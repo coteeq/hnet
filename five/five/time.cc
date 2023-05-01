@@ -49,6 +49,11 @@ Duration Duration::operator -(const Duration& other) const {
     return Duration(nanos() - other.nanos());
 }
 
+void linux_nanosleep(Duration dur) {
+    auto ts = dur.as_timespec();
+    nanosleep(&ts, NULL);
+}
+
 std::ostream& operator <<(std::ostream& os, const five::Duration& dur) {
     i64 nanos = dur.nanos();
     const char* unit = "ns";
@@ -58,4 +63,5 @@ std::ostream& operator <<(std::ostream& os, const five::Duration& dur) {
     if (nanos > 2'000'000'000) { scale *= 1'000; unit = "s"; }
     return os << nanos / scale << unit;
 }
+
 }
