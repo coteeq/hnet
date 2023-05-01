@@ -33,6 +33,6 @@ FetchContent_MakeAvailable(googletest)
 FetchContent_Declare(
         function2
         GIT_REPOSITORY https://github.com/Naios/function2.git
-        GIT_TAG master
+        GIT_TAG 2d3a878ef19dd5d2fb188898513610fac0a48621
 )
 FetchContent_MakeAvailable(function2)
