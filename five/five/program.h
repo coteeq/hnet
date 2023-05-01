@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include <wheels/core/assert.hpp>
+#include <wheels/logging/logging.hpp>
 #include <sstream>
 #include <fmt/core.h>
 
@@ -21,8 +22,11 @@ public:
                     os << "\n";
                     return os.str();
                 }());
-            return Run(cfg);
+            auto res = Run(cfg);
+            wheels::FlushPendingLogMessages();
+            return res;
         } catch (std::exception& ex) {
+            wheels::FlushPendingLogMessages();
             std::cerr << "Die: " << ex.what() << std::endl;
             return 1;
         }
