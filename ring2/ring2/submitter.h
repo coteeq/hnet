@@ -14,8 +14,8 @@ class Submitter {
 public:
     Submitter(std::shared_ptr<Ring> ring);
 
-    MsgHdr recvmsg(int fd);
-    int sendmsg(int fd, MsgHdr hdr);
+    MsgHdr recvmsg(int fd) const;
+    int sendmsg(int fd, MsgHdr& hdr) const;
 
 private:
     std::shared_ptr<Ring> ring_;
