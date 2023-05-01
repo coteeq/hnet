@@ -26,6 +26,7 @@ add_subdirectory(wheels)
 add_subdirectory(fallible/fallible)
 add_subdirectory(five)
 add_subdirectory(netring)
+add_subdirectory(ring2)
 add_subdirectory(sure)
 add_subdirectory(tinyfibers)
 
