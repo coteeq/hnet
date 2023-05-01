@@ -3,9 +3,15 @@
 #include <fallible/error/make.hpp>
 #include <fallible/error/throw.hpp>
 #include <wheels/core/compiler.hpp>
+#include <wheels/logging/logging.hpp>
+#include <five/time.h>
+
+#include <sched.h>
 
 #include "liburing.h"
 #include "liburing/io_uring.h"
+
+using namespace five::time_literals;
 
 namespace net {
 
@@ -68,11 +74,13 @@ void Uring::recvmsg(std::shared_ptr<Socket> sock, struct msghdr *hdr, CompleteCb
     io_uring_submit(&ring_);
 }
 
-void Uring::recvmsg(Socket* sock, struct msghdr *hdr, Cookie cookie) {
+void Uring::recvmsg(Socket* sock, struct msghdr *hdr, Cookie cookie, bool nosubmit) {
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     io_uring_prep_recvmsg(sqe, sock->fd(), hdr, 0);
     io_uring_sqe_set_data(sqe, cookie);
-    io_uring_submit(&ring_);
+    if (!nosubmit) {
+        io_uring_submit(&ring_);
+    }
 }
 
 void Uring::poll() {
@@ -86,8 +94,22 @@ void Uring::poll() {
 }
 
 UsefulCqe Uring::poll_cookie() {
-    struct io_uring_cqe* cqe;
-    SYSCALL_VERIFY(io_uring_wait_cqe(&ring_, &cqe) == 0, "io_uring_wait_cqe");
+    struct io_uring_cqe* cqe = nullptr;
+    int ret = -1;
+    for (int i = 0; i < 150000000; ++i) {
+        ret = io_uring_peek_cqe(&ring_, &cqe);
+        // LOG_INFO("peek: {}", ret);
+        if (ret == 0) {
+            break;
+        }
+        // five::linux_nanosleep(5_us);
+    }
+    if (ret != 0) {
+        LOG_WARN("falling back to kernel wait");
+        // auto start = five::Instant::now();
+        SYSCALL_VERIFY(io_uring_wait_cqe(&ring_, &cqe) == 0, "io_uring_wait_cqe");
+        // LOG_INFO("wait: {}", start.elapsed());
+    }
     auto useful = UsefulCqe(cqe);
     io_uring_cqe_seen(&ring_, cqe);
     return useful;

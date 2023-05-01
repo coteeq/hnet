@@ -30,7 +30,7 @@ public:
     void sendmsg(std::shared_ptr<Socket> sock, struct msghdr* hdr, CompleteCb&& cb);
     void sendmsg(Socket* sock, struct msghdr* hdr, Cookie);
     void recvmsg(std::shared_ptr<Socket> sock, struct msghdr* hdr, CompleteCb&& cb);
-    void recvmsg(Socket* sock, struct msghdr* hdr, Cookie);
+    void recvmsg(Socket* sock, struct msghdr* hdr, Cookie, bool nosubmit = false);
     void poll();
     UsefulCqe poll_cookie();
 

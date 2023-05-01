@@ -46,7 +46,7 @@ public:
         //     net::Addr::from_addr_in6(req->addr), req_text, req_text.size());
 
         // static const char* reply_text = "tenletters";
-        net::Request reply(500);
+        auto reply = requests_pool_.get();
         // LOG_DEBUG("iov_len: {}", reply.iov.iov_len);
         // auto fmt_res = fmt::format_to_n(
         //     static_cast<char*>(reply.iov.iov_base),
@@ -66,6 +66,7 @@ public:
         ring->sendmsg(socket_, &reply.hdr, cookie_);
         // LOG_INFO("submit: {}", start.elapsed());
         yield();
+        requests_pool_.put(std::move(reply));
 
         // LOG_DEBUG("successfully sent {} bytes", last_cqe_.res)
 

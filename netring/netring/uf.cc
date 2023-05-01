@@ -18,7 +18,8 @@ BaseHandler::BaseHandler(
         sure::ExecutionContext* main_ctx,
         Cookie cookie,
         Socket* socket,
-        five::Instant start
+        five::Instant start,
+        five::ObjectPoolLite<Request>& requests_pool
     )
     : uring_ref_(ring)
     , request_(std::move(request))
@@ -29,6 +30,7 @@ BaseHandler::BaseHandler(
     , socket_(socket)
     , last_cqe_()
     , cookie_(cookie)
+    , requests_pool_(requests_pool)
     , start_(start)
 {
 }

@@ -87,7 +87,8 @@ protected:
         sure::ExecutionContext* main_ctx,
         Cookie cookie,
         Socket* socket,
-        five::Instant start
+        five::Instant start,
+        five::ObjectPoolLite<Request>& requests_pool
     );
 
     void yield();
@@ -113,6 +114,7 @@ public:
     Socket* socket_;
     UsefulCqe last_cqe_;
     Cookie cookie_;
+    five::ObjectPoolLite<Request>& requests_pool_;
 
 private:
     five::Instant start_;
@@ -126,10 +128,12 @@ public:
     void dispatch_loop(Socket* socket) {
         static_assert(std::is_base_of_v<BaseHandler, Handler>);
         sure::ExecutionContext main_ctx;
+        using ReqOrHandler = std::variant<std::monostate, Request, Handler>;
 
         five::ObjectPoolLite<sure::Stack> stacks(10, [] { return sure::Stack::AllocateBytes(64 * 1024); });
+        five::ObjectPoolLite<ReqOrHandler*> req_or_handler_pool(10, [] { return new ReqOrHandler; });
+        five::ObjectPoolLite<Request> requests(10, [] { return Request(500); });
 
-        using ReqOrHandler = std::variant<std::monostate, Request, Handler>;
         {
             auto* req_or_handler = new ReqOrHandler(Request(500));
             uring_.recvmsg(socket, &std::get<Request>(*req_or_handler).hdr, static_cast<Cookie>(req_or_handler));
@@ -140,13 +144,11 @@ public:
             auto cqe = uring_.poll_cookie();
             LOG_INFO("polled in {}", five::Instant::now() - start);
             auto* req_or_handler = static_cast<ReqOrHandler*>(cqe.user_data);
-            // auto kill_handler = [&](Handler&& handler) {
 
-            // };
             LOG_DEBUG("got req_or_handler: {}", fmt::ptr(req_or_handler));
             if (std::holds_alternative<Request>(*req_or_handler)) {
                 auto&& req = std::get<Request>(std::move(*req_or_handler));
-                auto* new_req_or_handler = new ReqOrHandler();
+                auto* new_req_or_handler = req_or_handler_pool.get();
                 auto h = Handler(
                     &uring_,
                     std::move(req),
@@ -154,7 +156,8 @@ public:
                     &main_ctx,
                     static_cast<Cookie>(new_req_or_handler),
                     socket,
-                    start
+                    start,
+                    requests
                 );
                 h.last_cqe_ = cqe;
                 new_req_or_handler->template emplace<Handler>(std::move(h));
@@ -162,7 +165,7 @@ public:
                 handler.setup();
                 LOG_DEBUG("created new handler w stack {} and variant: {}", fmt::ptr(handler.stack_.MutView().Data()), fmt::ptr(new_req_or_handler));
 
-                req_or_handler->template emplace<Request>(500);
+                req_or_handler->template emplace<Request>(std::move(requests.get()));
                 uring_.recvmsg(socket, &std::get<Request>(*req_or_handler).hdr, static_cast<Cookie>(req_or_handler));
 
                 LOG_INFO("jumping into handler after {}", five::Instant::now() - start);
@@ -170,7 +173,7 @@ public:
                 if (handler.is_finished()) {
                     LOG_DEBUG("delete oneshot");
                     stacks.put(std::move(handler.stack_));
-                    delete new_req_or_handler;
+                    req_or_handler_pool.put(std::move(new_req_or_handler));
                 }
             } else if (std::holds_alternative<Handler>(*req_or_handler)) {
                 auto& handler = std::get<Handler>(*req_or_handler);
@@ -182,7 +185,7 @@ public:
                 if (handler.is_finished()) {
                     LOG_DEBUG("delete multishot");
                     stacks.put(std::move(handler.stack_));
-                    delete req_or_handler;
+                    req_or_handler_pool.put(std::move(req_or_handler));
                 }
             } else {
                 WHEELS_PANIC("unreachable" << __FILE__ << ':' << __LINE__);
