@@ -17,13 +17,13 @@ void saveload(const toml::table& tbl, const char* name, T* t); // load
 
 #define CONFIG_DEFINE_SAVELOAD_FOR_TYPE(type) \
     template <> \
-    void saveload(const toml::table& tbl, const char* name, type* t) { /* load */ \
+    inline void saveload(const toml::table& tbl, const char* name, type* t) { /* load */ \
         if (tbl.contains(name)) { \
             *t = *tbl[name].value<type>(); \
         } \
     } \
     template <> \
-    void saveload(toml::table& tbl, const char* name, const type* t) { /* save */ \
+    inline void saveload(toml::table& tbl, const char* name, const type* t) { /* save */ \
         tbl.insert_or_assign(name, *t); \
     }
 
