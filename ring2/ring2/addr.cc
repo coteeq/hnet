@@ -59,3 +59,5 @@ std::string Addr::to_string() const {
     inet_ntop(AF_INET6, &addr6->sin6_addr, ip_str, INET6_ADDRSTRLEN);
     return ip_str;
 }
+
+}
