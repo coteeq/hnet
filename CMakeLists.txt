@@ -14,7 +14,7 @@ set(COMMON_SRCS
 )
 
 set(SRV_SRCS
-    src/srv.cc
+    src/srv2.cc
 )
 
 set(CLI_SRCS
@@ -35,13 +35,14 @@ add_subdirectory(tinyfibers)
 add_executable(srv ${SRV_SRCS} ${COMMON_SRCS})
 add_executable(cli ${CLI_SRCS} ${COMMON_SRCS})
 target_link_libraries(srv
-    netring
+    ring2
     five
     sure
-    # tinyfibers
+    tinyfibers
 )
 
 target_link_libraries(cli
-netring
-five
+    ring2
+    five
+    tinyfibers
 )
