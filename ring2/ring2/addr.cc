@@ -96,21 +96,21 @@ std::string Addr::to_string() const {
     constexpr int len = std::max(INET6_ADDRSTRLEN, INET_ADDRSTRLEN);
     char ip_str[len];
     switch (addr_.sa_family) {
+        case AF_UNSPEC: {
+            return "(null)";
+        }
         case AF_INET: {
             SYSCALL_VERIFY(inet_ntop(AF_INET, &addr4_.sin_addr, ip_str, len) != nullptr, "inet_ntop");
-            break;
+            return fmt::format("{}:{}", ip_str, ntohs(addr4_.sin_port));
         }
         case AF_INET6: {
             SYSCALL_VERIFY(inet_ntop(AF_INET6, &addr6_.sin6_addr, ip_str, len) != nullptr, "inet_ntop");
-            break;
+            return fmt::format("[{}]:{}", ip_str, ntohs(addr6_.sin6_port));
         }
         default: {
             WHEELS_PANIC("unreachable");
-            break;
         }
     }
-
-    return ip_str;
 }
 
 }
