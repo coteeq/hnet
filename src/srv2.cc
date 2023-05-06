@@ -1,3 +1,4 @@
+#include "wheels/logging/logging.hpp"
 #include <five/config.h>
 #include <five/program.h>
 #include <ring2/ring.h>
@@ -6,6 +7,7 @@
 #include <ring2/submitter.h>
 #include <ring2/sock.h>
 #include <tf/rt/scheduler.hpp>
+#include <tf/sched/spawn.hpp>
 
 
 struct ServerConfig {
@@ -18,6 +20,11 @@ struct ServerConfig {
 
 TOML_STRUCT_DEFINE_SAVELOAD(ServerConfig);
 
+const char REPLY[] = \
+    "HTTP/1.1 200 OK\r\n"
+    "Content-Length: 9\r\n"
+    // "Connection: close\r\n"
+    "\r\nninebytes";
 
 class ServerProgram: public Program<ServerConfig> {
     int Run(const ServerConfig& config) override {
@@ -27,14 +34,27 @@ class ServerProgram: public Program<ServerConfig> {
         auto submitter = net::Submitter(ring);
 
         sched.Run([&config, submitter] {
-            auto socket = net::Socket(net::IPFamily::V4, net::Proto::UDP);
+            auto socket = net::Socket(net::IPFamily::V4, net::Proto::TCP);
             socket.bind(net::Addr::ip4_any(config.port));
+            socket.listen(10);
 
             for (;;) {
-                auto msg = submitter.recvmsg(socket.fd());
-                LOG_INFO("recv msg {} bytes", msg.buf.size());
-                msg.buf = msg.buf + msg.buf;
-                submitter.sendmsg(socket.fd(), msg);
+                auto [fd, addr] = submitter.accept(socket.fd());
+                LOG_INFO("Got connection from {}", addr);
+                tf::Spawn([&submitter, fd=fd] {
+                    for (;;) {
+                        auto req = submitter.recvmsg(fd);
+                        if (req.buf.size() == 0) {
+                            break;
+                        }
+                        LOG_INFO("Received req: from: {}, text: {} raw_ret = {}", req.addr, req.buf, req.raw_ret);
+                        net::MsgHdr hdr = {
+                            .buf = REPLY,
+                            .addr = req.addr,
+                        };
+                        submitter.sendmsg(fd, hdr);
+                    }
+                }).Detach();
             }
         });
 
