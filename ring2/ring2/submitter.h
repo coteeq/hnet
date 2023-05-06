@@ -16,6 +16,7 @@ public:
 
     MsgHdr recvmsg(int fd) const;
     int sendmsg(int fd, MsgHdr& hdr) const;
+    std::pair<int, Addr> accept(int fd) const;
 
 private:
     std::shared_ptr<Ring> ring_;

@@ -1,7 +1,9 @@
 #include "addr.h"
 #include <cstring>
 #include <fallible/error/make.hpp>
+#include <netinet/in.h>
 #include <sys/socket.h>
+#include <wheels/core/panic.hpp>
 
 namespace {
 
@@ -34,15 +36,52 @@ Addr Addr::ip6_local(uint16_t port) {
     return from_in6_addr(in6addr_loopback, port);
 }
 
-Addr Addr::from_parts(const std::string& address, uint16_t port) {
-    Addr addr;
-    auto server_address = reinterpret_cast<sockaddr_in6*>(&addr.addr_);
-    memset(server_address, 0, sizeof(*server_address));
-    server_address->sin6_family = AF_INET6;
-    server_address->sin6_port = htons(port);
-    addr.addrlen_ = sizeof(*server_address);
 
-    SYSCALL_VERIFY(inet_pton(AF_INET6, address.c_str(), &server_address->sin6_addr) == 1, "inet_pton");
+Addr Addr::ip4_any(uint16_t port) {
+    Addr addr;
+    memset(&addr.addr4_, 0, sizeof(addr.addr4_));
+    addr.addr4_.sin_family = AF_INET;
+    addr.addr4_.sin_port = htons(port);
+    addr.addr4_.sin_addr.s_addr = INADDR_ANY;
+    addr.addrlen_ = sizeof(addr.addr4_);
+    return addr;
+}
+
+Addr Addr::ip4_local(uint16_t port) {
+    Addr addr;
+    memset(&addr.addr4_, 0, sizeof(addr.addr4_));
+    addr.addr4_.sin_family = AF_INET;
+    addr.addr4_.sin_port = htons(port);
+    addr.addr4_.sin_addr.s_addr = INADDR_LOOPBACK;
+    addr.addrlen_ = sizeof(addr.addr4_);
+    return addr;
+}
+
+
+Addr Addr::from_parts(const std::string& address, uint16_t port, IPFamily family) {
+    Addr addr;
+    switch (family) {
+        case IPFamily::V4: {
+            auto* server_address = &addr.addr4_;
+            memset(server_address, 0, sizeof(*server_address));
+            server_address->sin_family = AF_INET;
+            server_address->sin_port = htons(port);
+            addr.addrlen_ = sizeof(*server_address);
+
+            SYSCALL_VERIFY(inet_pton(AF_INET, address.c_str(), &server_address->sin_addr) == 1, "inet_pton");
+            break;
+        }
+        case IPFamily::V6: {
+            auto* server_address = &addr.addr6_;
+            memset(server_address, 0, sizeof(*server_address));
+            server_address->sin6_family = AF_INET6;
+            server_address->sin6_port = htons(port);
+            addr.addrlen_ = sizeof(*server_address);
+
+            SYSCALL_VERIFY(inet_pton(AF_INET6, address.c_str(), &server_address->sin6_addr) == 1, "inet_pton");
+            break;
+        }
+    }
     return addr;
 }
 
@@ -54,9 +93,23 @@ Addr Addr::from_addr_in6(const struct sockaddr_in6& addr_in6) {
 }
 
 std::string Addr::to_string() const {
-    char ip_str[INET6_ADDRSTRLEN];
-    auto addr6 = reinterpret_cast<const sockaddr_in6*>(&addr_);
-    inet_ntop(AF_INET6, &addr6->sin6_addr, ip_str, INET6_ADDRSTRLEN);
+    constexpr int len = std::max(INET6_ADDRSTRLEN, INET_ADDRSTRLEN);
+    char ip_str[len];
+    switch (addr_.sa_family) {
+        case AF_INET: {
+            SYSCALL_VERIFY(inet_ntop(AF_INET, &addr4_.sin_addr, ip_str, len) != nullptr, "inet_ntop");
+            break;
+        }
+        case AF_INET6: {
+            SYSCALL_VERIFY(inet_ntop(AF_INET6, &addr6_.sin6_addr, ip_str, len) != nullptr, "inet_ntop");
+            break;
+        }
+        default: {
+            WHEELS_PANIC("unreachable");
+            break;
+        }
+    }
+
     return ip_str;
 }
 

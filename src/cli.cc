@@ -25,7 +25,7 @@ TOML_STRUCT_DEFINE_SAVELOAD(Address);
 struct ClientConfig {
     std::string data_to_send = "ninebytes";
     int64_t port = 6667;
-    Address server = Address{.host = "::1", .port = 6667};
+    Address server = Address{.host = "127.0.0.1", .port = 6667};
     int64_t count = 3;
 
     TOML_STRUCT_DEFINE_MEMBER_SAVELOAD(
@@ -45,8 +45,8 @@ class ClientProgram: public Program<ClientConfig> {
         auto sched = tf::rt::Scheduler(&poller);
         auto submitter = net::Submitter(ring);
         sched.Run([&config, submitter] {
-            auto socket = net::UdpSocket();
-            auto addr = net::Addr::from_parts(config.server.host, config.server.port);
+            auto socket = net::Socket(net::IPFamily::V4, net::Proto::UDP);
+            auto addr = net::Addr::from_parts(config.server.host, config.server.port, net::IPFamily::V4);
 
             // const char* data_to_send = config.data_to_send.c_str();
             LOG_INFO("starting to send...");

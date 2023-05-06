@@ -27,8 +27,8 @@ class ServerProgram: public Program<ServerConfig> {
         auto submitter = net::Submitter(ring);
 
         sched.Run([&config, submitter] {
-            auto socket = net::UdpSocket();
-            socket.bind(net::Addr::ip6_any(config.port));
+            auto socket = net::Socket(net::IPFamily::V4, net::Proto::UDP);
+            socket.bind(net::Addr::ip4_any(config.port));
 
             for (;;) {
                 auto msg = submitter.recvmsg(socket.fd());

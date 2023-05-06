@@ -6,6 +6,16 @@
 
 namespace net {
 
+enum class IPFamily {
+    V4 = 0,
+    V6 = 1,
+};
+
+enum class Proto {
+    TCP = 0,
+    UDP = 1,
+};
+
 struct Addr {
     Addr();
 
@@ -18,7 +28,9 @@ struct Addr {
 
     static Addr ip6_any(uint16_t port);
     static Addr ip6_local(uint16_t port);
-    static Addr from_parts(const std::string& addr, uint16_t port);
+    static Addr ip4_any(uint16_t port);
+    static Addr ip4_local(uint16_t port);
+    static Addr from_parts(const std::string& addr, uint16_t port, IPFamily family);
     static Addr from_addr_in6(const struct sockaddr_in6& addr_in6);
 
     std::string to_string() const;

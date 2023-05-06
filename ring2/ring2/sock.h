@@ -3,14 +3,15 @@
 
 namespace net {
 
-class UdpSocket {
+class Socket {
 public:
-    UdpSocket();
-    explicit UdpSocket(int fd);
-    ~UdpSocket();
+    Socket(IPFamily, Proto);
+    explicit Socket(int fd);
+    ~Socket();
 
     int fd() const;
     void bind(Addr addr);
+    void listen(int n);
 
 private:
     int fd_;
