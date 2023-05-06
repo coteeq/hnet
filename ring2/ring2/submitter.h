@@ -6,6 +6,7 @@
 namespace net {
 
 struct MsgHdr {
+    int raw_ret;
     std::string buf; // FIXME
     Addr addr;
 };

@@ -57,6 +57,7 @@ MsgHdr Submitter::recvmsg(int fd) const {
         fallible::ThrowError(fallible::Err(fallible::FromErrno{-res}, WHEELS_HERE));
     }
     result.buf = std::string((char*)buf.iov_base, res);
+    result.raw_ret = res;
     free(buf.iov_base);
     return result;
 }
@@ -76,6 +77,10 @@ int Submitter::sendmsg(int fd, MsgHdr& hdr) const {
         io_uring_prep_sendmsg(sqe, fd, &res_hdr, 0);
     });
 
+    if (res < 0) {
+        fallible::ThrowError(fallible::Err(fallible::FromErrno{-res}, WHEELS_HERE));
+    }
+
     return res;
 }
 
@@ -84,6 +89,10 @@ std::pair<int, Addr> Submitter::accept(int fd) const {
     auto res = ring_submit(ring_, [&] (struct io_uring_sqe* sqe) {
         io_uring_prep_accept(sqe, fd, &addr.addr_, &addr.addrlen_, 0);
     });
+
+    if (res < 0) {
+        fallible::ThrowError(fallible::Err(fallible::FromErrno{-res}, WHEELS_HERE));
+    }
 
     return std::make_pair(res, addr);
 }
