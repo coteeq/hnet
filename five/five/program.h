@@ -6,6 +6,9 @@
 #include <sstream>
 #include <fmt/core.h>
 
+
+namespace five {
+
 template <class Config>
 class Program {
 public:
@@ -34,3 +37,5 @@ public:
 
     virtual int Run(const Config& config) = 0;
 };
+
+}
