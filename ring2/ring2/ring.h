@@ -15,6 +15,11 @@ struct UsefulCqe {
     i32	  res = 0;
 };
 
+struct Starvation {
+    size_t cycles = 0;
+    size_t times = 0;
+};
+
 class Ring {
 public:
     using RequestBuilder = fu2::function_view<void(struct io_uring_sqe*)>;
@@ -30,6 +35,7 @@ private:
     // TODO: buffers
     mutable struct io_uring ring_;
     mutable size_t pending_count_;
+    mutable Starvation starvation__;
 };
 
 }

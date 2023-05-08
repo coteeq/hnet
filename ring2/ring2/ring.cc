@@ -1,5 +1,6 @@
 #include "ring.h"
-#include "fallible/error/throw.hpp"
+#include <fallible/error/throw.hpp>
+#include <liburing/io_uring.h>
 
 #include <fallible/error/make.hpp>
 #include <wheels/logging/logging.hpp>
@@ -14,7 +15,7 @@ UsefulCqe::UsefulCqe(const struct io_uring_cqe* cqe)
 
 Ring::Ring(u32 entries) {
     struct io_uring_params params = {};
-    params.flags |= IORING_SETUP_SQPOLL;
+    params.flags |= IORING_SETUP_SQPOLL | IORING_SETUP_SINGLE_ISSUER;
     params.sq_thread_idle = 2000;
 
     if (int res = io_uring_queue_init_params(entries, &ring_, &params); res != 0) {
@@ -24,7 +25,21 @@ Ring::Ring(u32 entries) {
 }
 
 void Ring::submit(RequestBuilder builder) const {
-    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    struct io_uring_sqe* sqe = nullptr;
+    bool starved = false;
+    while (!sqe) {
+        sqe = io_uring_get_sqe(&ring_);
+        if (!sqe) {
+            starved = true;
+            starvation_.cycles++;
+        }
+    }
+    if (starved) {
+        starvation_.times++;
+        if (starvation_.times % 1000 == 0) {
+            LOG_WARN("starved total {} times / {} cycles", starvation_.times, starvation_.cycles);
+        }
+    }
     builder(sqe);
     io_uring_submit(&ring_);
     pending_count_++;
