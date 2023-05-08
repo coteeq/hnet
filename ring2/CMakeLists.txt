@@ -19,5 +19,5 @@ target_link_libraries(ring2 five)
 target_link_libraries(ring2 function2)
 target_link_libraries(ring2 tinyfibers)
 
-target_include_directories(ring2 PUBLIC /home/fed/src/liburing/src/include)
-target_link_libraries(ring2 /home/fed/src/liburing/src/liburing.a)
+target_include_directories(ring2 PUBLIC /home/coteeq/src/liburing/src/include)
+target_link_libraries(ring2 /home/coteeq/src/liburing/src/liburing.a)
