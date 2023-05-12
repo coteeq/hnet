@@ -17,8 +17,12 @@ private:
 };
 
 struct UringResSetter {
+    UringResSetter() = default;
+    UringResSetter(int init_res);
+
     tf::rt::Fiber* fiber;
     int res;
+    std::optional<std::function<bool()>> should_wake;
 };
 
 }
