@@ -9,10 +9,6 @@ add_compile_options(-Wall -Wextra -g -fno-omit-frame-pointer)
 # add_compile_options(-Wpedantic)
 add_compile_options(-Werror)
 
-set(COMMON_SRCS
-    # src/reh.cc
-)
-
 set(SRV_SRCS
     src/srv2.cc
 )
@@ -31,8 +27,9 @@ add_subdirectory(tinyfibers)
 
 # target_compile_options(net PRIVATE -Wno-pedantic)
 
-add_executable(srv ${SRV_SRCS} ${COMMON_SRCS})
-add_executable(cli ${CLI_SRCS} ${COMMON_SRCS})
+add_executable(srv ${SRV_SRCS})
+add_executable(cli ${CLI_SRCS})
+add_executable(cli_udp src/infallible_udp.cc)
 target_link_libraries(srv
     ring2
     five
@@ -41,6 +38,12 @@ target_link_libraries(srv
 )
 
 target_link_libraries(cli
+    ring2
+    five
+    tinyfibers
+)
+
+target_link_libraries(cli_udp
     ring2
     five
     tinyfibers
