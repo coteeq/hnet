@@ -86,7 +86,7 @@ class ClientProgram: public five::Program<ClientConfig> {
                         LOG_DEBUG("sending...");
                         auto send_res = submitter.sendmsg(socket.fd(), send_data);
                         if (send_res <= 0) {
-                            fallible::ThrowError(fallible::Err(fallible::FromErrno{-send_res}, WHEELS_HERE));
+                            fallible::ThrowError(fallible::Err(fallible::FromErrno{-send_res}, "bad sendmsg", WHEELS_HERE));
                         }
 
                         char buf[65'000];
@@ -128,7 +128,8 @@ class ClientProgram: public five::Program<ClientConfig> {
                 LOG_CRIT("p{:<5} = {}", quantile, timings[idx]);
             }
 
-            auto traffic_out = static_cast<double>(timings.size() * data_to_send.size()) / 1'000'000;
+            auto traffic_out_total = static_cast<double>(timings.size() * data_to_send.size()) / 1'000'000;
+            auto traffic_out = traffic_out_total / std::accumulate(timings.begin(), timings.end(), five::Duration()).seconds_float();
             LOG_CRIT("throughput: out: {}mb/s, in: {}mb/s", traffic_out, traffic_out * 2);
         });
 
