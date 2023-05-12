@@ -2,6 +2,7 @@ set(SRCS
     five/type_name.cc
     five/xrange.cc
     five/time.cc
+    five/linux.cc
 )
 
 add_library(five ${SRCS})
