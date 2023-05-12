@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <fmt/ostream.h>
 
+#include <linux/time_types.h>
+
 namespace five {
 
 
@@ -41,6 +43,13 @@ public:
     }
 
     struct timespec as_timespec() const {
+        return {
+            .tv_sec = nanos() / 1'000'000'000,
+            .tv_nsec = nanos() % 1'000'000'000
+        };
+    }
+
+    struct __kernel_timespec as_kernel_timespec() const {
         return {
             .tv_sec = nanos() / 1'000'000'000,
             .tv_nsec = nanos() % 1'000'000'000
