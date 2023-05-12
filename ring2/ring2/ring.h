@@ -24,9 +24,9 @@ class Ring {
 public:
     using RequestBuilder = fu2::function_view<void(struct io_uring_sqe*)>;
 
-    explicit Ring(u32 entries = 8);
+    Ring(u32 entries = 8, u32 cpuid = -1);
 
-    void submit(RequestBuilder builder) const;
+    int submit(RequestBuilder builder, bool next_is_timeout = false) const;
     UsefulCqe poll() const;
     std::optional<UsefulCqe> try_poll() const;
     bool has_pending() const;
@@ -35,7 +35,7 @@ private:
     // TODO: buffers
     mutable struct io_uring ring_;
     mutable size_t pending_count_;
-    mutable Starvation starvation__;
+    mutable Starvation starvation_;
 };
 
 }

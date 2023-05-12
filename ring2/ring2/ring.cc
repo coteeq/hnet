@@ -13,18 +13,23 @@ UsefulCqe::UsefulCqe(const struct io_uring_cqe* cqe)
     , res(cqe->res)
 {}
 
-Ring::Ring(u32 entries) {
+Ring::Ring(u32 entries, u32 cpuid) {
     struct io_uring_params params = {};
     params.flags |= IORING_SETUP_SQPOLL | IORING_SETUP_SINGLE_ISSUER;
     params.sq_thread_idle = 2000;
 
+    if (cpuid != (u32)-1) {
+        params.sq_thread_cpu = cpuid;
+        params.flags |= IORING_SETUP_SQ_AFF;
+    }
+
     if (int res = io_uring_queue_init_params(entries, &ring_, &params); res != 0) {
-        fallible::ThrowError(fallible::Err(fallible::FromErrno{-res}));
+        fallible::ThrowError(fallible::Err(fallible::FromErrno{-res}, "bad init"));
     }
     pending_count_ = 0;
 }
 
-void Ring::submit(RequestBuilder builder) const {
+int Ring::submit(RequestBuilder builder, bool next_is_timeout) const {
     struct io_uring_sqe* sqe = nullptr;
     bool starved = false;
     while (!sqe) {
@@ -41,8 +46,11 @@ void Ring::submit(RequestBuilder builder) const {
         }
     }
     builder(sqe);
-    io_uring_submit(&ring_);
     pending_count_++;
+    if (!next_is_timeout) {
+        return io_uring_submit(&ring_);
+    }
+    return -EINPROGRESS;
 }
 
 UsefulCqe Ring::poll() const {
