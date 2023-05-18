@@ -4,6 +4,7 @@
 
 #include <fallible/error/make.hpp>
 #include <wheels/logging/logging.hpp>
+#include <tf/sched/yield.hpp>
 
 
 namespace net {
@@ -37,12 +38,13 @@ int Ring::submit(RequestBuilder builder, bool next_is_timeout) const {
         if (!sqe) {
             starved = true;
             starvation_.cycles++;
+            tf::Yield();
         }
     }
     if (starved) {
         starvation_.times++;
         if (starvation_.times % 1000 == 0) {
-            LOG_WARN("starved total {} times / {} cycles", starvation_.times, starvation_.cycles);
+            LOG_ERROR("starved total {} times / {} cycles", starvation_.times, starvation_.cycles);
         }
     }
     builder(sqe);
@@ -73,6 +75,17 @@ std::optional<UsefulCqe> Ring::try_poll() const {
     io_uring_cqe_seen(&ring_, cqe);
     pending_count_--;
     return useful;
+}
+
+int Ring::try_poll_many(UsefulCqe* dst) const {
+    struct io_uring_cqe* cqes[16];
+    int ret = io_uring_peek_batch_cqe(&ring_, cqes, 16);
+    for (int i = 0; i < ret; ++i) {
+        dst[i] = UsefulCqe(cqes[i]);
+    }
+    io_uring_cq_advance(&ring_, ret);
+    pending_count_ -= ret;
+    return ret;
 }
 
 bool Ring::has_pending() const {

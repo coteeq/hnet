@@ -17,7 +17,7 @@ public:
         WHEELS_VERIFY(argc == 2, "argc should be 2");
         try {
             cfg.config_load(toml::parse_file(argv[1]));
-            fmt::print(
+            LOG_CRIT(
                 "starting with config:\n{}",
                 [&cfg] {
                     std::ostringstream os;

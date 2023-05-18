@@ -9,7 +9,9 @@ public:
     explicit Socket(int fd);
     ~Socket();
 
-    int fd() const;
+    inline int fd() const {
+        return fd_;
+    }
     void bind(Addr addr);
     void listen(int n);
 

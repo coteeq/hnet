@@ -4,6 +4,7 @@
 #include <asm-generic/errno.h>
 #include <fallible/error/make.hpp>
 #include <unistd.h>
+#include <netinet/tcp.h>
 
 namespace net {
 
@@ -35,10 +36,12 @@ Socket::Socket(IPFamily family, Proto proto)
     }
     fd_ = socket(domain, type, 0);
     SYSCALL_VERIFY(fd_ >= 0, "socket");
-}
 
-int Socket::fd() const {
-    return fd_;
+    if (proto == Proto::TCP) {
+        int val = 1;
+        SYSCALL_VERIFY(setsockopt(fd_, IPPROTO_TCP, TCP_FASTOPEN, &val, sizeof(val)) == 0, "setsockopt");
+        SYSCALL_VERIFY(setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == 0, "setsockopt");
+    }
 }
 
 Socket::~Socket() {

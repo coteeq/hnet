@@ -7,13 +7,16 @@ namespace net {
 
 class RingPoller: public tf::rt::IPoller {
 public:
-    RingPoller(std::shared_ptr<Ring> ring);
+    RingPoller(std::shared_ptr<Ring> ring, size_t busypoll_attempts = 1'000'000);
 
     tf::rt::Fiber* TryPoll() override;
+    int TryPollMany(tf::rt::Fiber*[tf::rt::MAX_POLL_MANY]) override;
     bool HasPending() const override;
 
 private:
     std::shared_ptr<Ring> ring_;
+    size_t attempts_;
+    size_t max_attempts_;
 };
 
 struct UringResSetter {

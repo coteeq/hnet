@@ -29,6 +29,7 @@ public:
     int submit(RequestBuilder builder, bool next_is_timeout = false) const;
     UsefulCqe poll() const;
     std::optional<UsefulCqe> try_poll() const;
+    int try_poll_many(UsefulCqe* dst) const;
     bool has_pending() const;
 
 private:

@@ -37,7 +37,6 @@ int ring_submit(std::shared_ptr<Ring> ring, Ring::RequestBuilder builder, five::
     auto timeout_res_setter = UringResSetter(-ENOCQE);
 
     auto check_both_set = [&] () -> bool {
-        LOG_DEBUG("op: {}, timeout: {}", op_res_setter.res, timeout_res_setter.res);
         return op_res_setter.res != -ENOCQE && timeout_res_setter.res != -ENOCQE;
     };
     op_res_setter.should_wake = check_both_set;
@@ -100,6 +99,7 @@ MsgHdr Submitter::recvmsg(int fd) const {
 
     auto res = ring_submit(ring_, [&] (struct io_uring_sqe* sqe) {
         io_uring_prep_recvmsg(sqe, fd, &res_hdr, 0);
+        sqe->flags |= IOSQE_ASYNC;
     });
 
     // if (res < 0) {
@@ -127,6 +127,7 @@ ReadView Submitter::recvmsg(int fd, wheels::MutableMemView buf) const {
 
     auto res = ring_submit(ring_, [&] (struct io_uring_sqe* sqe) {
         io_uring_prep_recvmsg(sqe, fd, &res_hdr, 0);
+        sqe->flags |= IOSQE_ASYNC;
     });
 
     if (res >= 0) {
@@ -151,6 +152,8 @@ ReadView Submitter::recvmsg(int fd, wheels::MutableMemView buf, five::Duration d
 
     auto res = ring_submit(ring_, [&] (struct io_uring_sqe* sqe) {
         io_uring_prep_recvmsg(sqe, fd, &res_hdr, 0);
+        sqe->flags |= IOSQE_ASYNC;
+        sqe->ioprio |= IORING_RECVSEND_POLL_FIRST;
     }, dur);
 
     if (res >= 0) {
